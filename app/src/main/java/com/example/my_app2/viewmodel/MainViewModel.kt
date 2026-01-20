@@ -13,10 +13,11 @@ class MainViewModel : ViewModel() {
     val counter: StateFlow<Int> = _counter
 
     fun onButtonClick() {
-        _text.value = "ViewModel"
+        _text.value =
+            if (_text.value == "Android") "ViewModel" else "Android"
     }
 
     fun incrementCounter() {
-        _counter.value += 10
+        _counter.value += 1
     }
 }
