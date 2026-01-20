@@ -17,6 +17,6 @@ class MainViewModel : ViewModel() {
     }
 
     fun incrementCounter() {
-        _counter.value += 1
+        _counter.value += 10
     }
 }
