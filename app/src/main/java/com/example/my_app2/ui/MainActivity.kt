@@ -3,140 +3,115 @@ package com.example.my_app2.ui
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Percent
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.my_app2.ui.theme.My_app2Theme
 import com.example.my_app2.viewmodel.MainViewModel
 
 class MainActivity : ComponentActivity() {
-
     private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-
         setContent {
             My_app2Theme {
+                val state by viewModel.uiState.collectAsState()
+                var amountInput by remember { mutableStateOf("") }
+                var discountInput by remember { mutableStateOf("") }
 
-                val text by viewModel.text.collectAsState()
-                val counter by viewModel.counter.collectAsState()
-
-                /* ---------- АНИМАЦИЯ ФОНА ---------- */
-                val infiniteTransition = rememberInfiniteTransition(label = "bg")
-
-                val animationProgress by infiniteTransition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 1f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(4000, easing = LinearEasing),
-                        repeatMode = RepeatMode.Reverse
-                    ),
-                    label = "progress"
-                )
-
-                val topColor =
-                    if (animationProgress < 0.5f) Color(0xFF42A5F5) else Color(0xFF7E57C2)
-                val bottomColor =
-                    if (animationProgress < 0.5f) Color(0xFF90CAF9) else Color(0xFFCE93D8)
-
-                /* ---------- АНИМАЦИЯ СЧЁТЧИКА ---------- */
-                val scale by animateFloatAsState(
-                    targetValue = if (counter > 0) 1.3f else 1f,
-                    animationSpec = tween(300),
-                    label = "scale"
-                )
-
-                val counterColor by animateColorAsState(
-                    targetValue = if (counter % 2 == 0)
-                        Color(0xFF1E88E5)
-                    else
-                        Color(0xFFD81B60),
-                    label = "counterColor"
-                )
-
-                Scaffold { padding ->
-
-                    Box(
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(topColor, bottomColor)
-                                )
-                            )
-                            .padding(padding)
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
+                        Text(
+                            text = "Жеңілдік Калькуляторы",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
 
-                        Card(
+                        // Сумма өрісі (Иконкамен)
+                        OutlinedTextField(
+                            value = amountInput,
+                            onValueChange = { amountInput = it },
+                            label = { Text("Сумма (тенге)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            leadingIcon = {
+                                Icon(Icons.Default.AccountBalanceWallet, contentDescription = null)
+                            }
+                        )
+
+                        // Скидка өрісі (Иконкамен)
+                        OutlinedTextField(
+                            value = discountInput,
+                            onValueChange = { discountInput = it },
+                            label = { Text("Скидка (%)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            leadingIcon = {
+                                Icon(Icons.Default.Percent, contentDescription = null)
+                            }
+                        )
+
+                        Button(
+                            onClick = { viewModel.calculate(amountInput, discountInput) },
                             modifier = Modifier
-                                .align(Alignment.Center)
-                                .padding(24.dp),
-                            shape = RoundedCornerShape(24.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color.White.copy(alpha = 0.88f)
-                            ),
-                            elevation = CardDefaults.cardElevation(12.dp)
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
+                            Text("Рассчитать", style = MaterialTheme.typography.titleMedium)
+                        }
 
-                            Column(
+                        // Нәтиже карточкасы
+                        if (state.resultText.isNotEmpty() || !state.isValid) {
+                            Card(
                                 modifier = Modifier
-                                    .padding(32.dp)
-                                    .widthIn(min = 280.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (state.isValid)
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    else
+                                        MaterialTheme.colorScheme.errorContainer
+                                )
                             ) {
-
-                                Text(
-                                    text = "Hello $text",
-                                    style = MaterialTheme.typography.headlineMedium
-                                )
-
-                                Spacer(modifier = Modifier.height(20.dp))
-
-                                Text(
-                                    text = "$counter",
-                                    fontSize = 56.sp,
-                                    color = counterColor,
-                                    modifier = Modifier.scale(scale)
-                                )
-
-                                Spacer(modifier = Modifier.height(24.dp))
-
-                                Button(
-                                    onClick = { viewModel.onButtonClick() },
-                                    shape = RoundedCornerShape(16.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Сменить текст")
-                                }
-
-                                Spacer(modifier = Modifier.height(12.dp))
-
-                                Button(
-                                    onClick = { viewModel.incrementCounter() },
-                                    shape = RoundedCornerShape(16.dp),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF1E88E5)
-                                    )
+                                Box(
+                                    modifier = Modifier.padding(24.dp).fillMaxWidth(),
+                                    contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        "Увеличить счётчик",
-                                        color = Color.White
+                                        text = if (state.isValid) state.resultText else state.errorText,
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        color = if (state.isValid)
+                                            MaterialTheme.colorScheme.onPrimaryContainer
+                                        else
+                                            MaterialTheme.colorScheme.onErrorContainer,
+                                        textAlign = TextAlign.Center
                                     )
                                 }
                             }

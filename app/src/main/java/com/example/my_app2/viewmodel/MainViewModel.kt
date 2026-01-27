@@ -1,23 +1,30 @@
 package com.example.my_app2.viewmodel
 
 import androidx.lifecycle.ViewModel
+import com.example.my_app2.model.UiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class MainViewModel : ViewModel() {
+    private val _uiState = MutableStateFlow(UiState())
+    val uiState: StateFlow<UiState> = _uiState
 
-    private val _text = MutableStateFlow("Android")
-    val text: StateFlow<String> = _text
+    fun calculate(amountStr: String, discountStr: String) {
+        val amount = amountStr.toDoubleOrNull()
+        val discount = discountStr.toDoubleOrNull()
 
-    private val _counter = MutableStateFlow(0)
-    val counter: StateFlow<Int> = _counter
-
-    fun onButtonClick() {
-        _text.value =
-            if (_text.value == "Android") "ViewModel" else "Android"
-    }
-
-    fun incrementCounter() {
-        _counter.value += 1
+        // Тексеру логикасы
+        when {
+            amount == null || discount == null -> {
+                _uiState.value = UiState(errorText = "Сандарды толтырыңыз!", isValid = false)
+            }
+            discount < 0 || discount > 90 -> {
+                _uiState.value = UiState(errorText = "Жеңілдік 0-90% арасында болуы керек", isValid = false)
+            }
+            else -> {
+                val finalAmount = amount * (1 - discount / 100)
+                _uiState.value = UiState(resultText = "Қорытынды: $finalAmount", isValid = true)
+            }
+        }
     }
 }
